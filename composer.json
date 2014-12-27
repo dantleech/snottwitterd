@@ -1,0 +1,17 @@
+{
+    "name": "dantleech/nottwitter",
+    "description": "Notifier for Twits",
+    "authors": [
+        {
+            "name": "Daniel Leech",
+            "email": "daniel@dantleech.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "guzzlehttp/guzzle": "4.*",
+        "guzzlehttp/log-subscriber": "1.*",
+        "monolog/monolog": "*",
+        "guzzlehttp/oauth-subscriber": "*"
+    }
+}
