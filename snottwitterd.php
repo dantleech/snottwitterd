@@ -42,9 +42,8 @@ if ($config['logging']) {
     $log = new Logger('guzzle');
     $log->pushHandler(new StreamHandler('guzzle.log'));  // Log will be found at a file named guzzle.log
     $subscriber = new LogSubscriber($log, Formatter::SHORT); //To see full details, you can use Formatter::DEBUG
+    $client->getEmitter()->attach($subscriber);
 }
-
-$client->getEmitter()->attach($subscriber);
  
 /*
  * Executing a GET request on the timeline service, pass the result to the json parser
@@ -56,9 +55,10 @@ while (true) {
     try {
         $twits = $client->get('1.1/statuses/home_timeline.json')->json();
 
-        if ((null !== $oldTwits && count($oldTwits) != count($twits))) {
-            $newTwits = array_slice($twits, count($oldTwits));
-            foreach ($twits as $newTwit) {
+        if (null !== $oldTwits && count($oldTwits) != count($twits)) {
+            $newTwits = array_reverse(array_slice(array_reverse($twits), count($oldTwits)));
+
+            foreach ($newTwits as $newTwit) {
                 $body = $newTwit['text'];
                 if (isset($newTwit['retweet_status'])) {
                     $title = sprintf(
@@ -102,10 +102,15 @@ function get_image_path($url)
 
 function notify($title, $message, $icon = null)
 {
-    exec(sprintf(
-        'export DISPLAY=:0; notify-send %s %s -i %s',
+    $command = sprintf(
+        'export DISPLAY=:0; notify-send %s %s',
         escapeshellarg($title),
-        escapeshellarg($message),
-        escapeshellarg($icon)
-    ));
+        escapeshellarg($message)
+    );
+
+    if ($icon) {
+        $command .= ' -i ' . escapeshellarg($icon);
+    }
+
+    exec($command);
 }
