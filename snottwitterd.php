@@ -15,13 +15,13 @@ if (!file_exists(__DIR__ . '/config.php')) {
 $userConfig = require_once(__DIR__ . '/config.php');
 
 $config = array_merge(array(
-    'timeout' => 120,
+    'timeout' => 80,
     'cache_dir' => __DIR__ . '/cache',
     'consumer_key' => '',
     'consumer_secret' => '',
     'token' => '',
     'token_secret' => '',
-    'logging' => false,
+    'logging' => true,
 ), $userConfig);
 
 if (!file_exists($config['cache_dir'])) {
@@ -49,34 +49,36 @@ if ($config['logging']) {
  * Executing a GET request on the timeline service, pass the result to the json parser
  */
 
-$oldTwits = null;
+$lastTwitId = null;
 
 while (true) {
     try {
         $twits = $client->get('1.1/statuses/home_timeline.json')->json();
 
-        if (null !== $oldTwits && count($oldTwits) != count($twits)) {
-            $newTwits = array_reverse(array_slice(array_reverse($twits), count($oldTwits)));
+        foreach ($twits as $twit) {
+            if (null !== $lastTwitId && $twit['id'] === $lastTwitId) {
+                break;
+            }
 
-            foreach ($newTwits as $newTwit) {
-                $body = $newTwit['text'];
-                if (isset($newTwit['retweet_status'])) {
-                    $title = sprintf(
-                        '%s retweeted %s',
-                        $newTwit['user']['screen_name'],
-                        $newTwit['retweet_status']['user']['screen_name']
-                    );
-                    $icon = $newTwit['retweet_status']['user']['profile_image_url'];
-                } else {
-                    $title = sprintf('%s', $newTwit['user']['screen_name']);
-                    $icon = $newTwit['user']['profile_image_url'];
-                }
+            $body = $twit['text'];
+            if (isset($twit['retweet_status'])) {
+                $title = sprintf(
+                    '%s retweeted %s',
+                    $twit['user']['screen_name'],
+                    $twit['retweet_status']['user']['screen_name']
+                );
+                $icon = $twit['retweet_status']['user']['profile_image_url'];
+            } else {
+                $title = sprintf('%s', $twit['user']['screen_name']);
+                $icon = $twit['user']['profile_image_url'];
+            }
 
+            if ($lastTwitId) {
                 notify($title, $body, get_image_path($icon));
             }
         }
 
-        $oldTwits = $twits;
+        $lastTwitId = $twits[0]['id'];
     } catch (GuzzleHttp\Exception\ClientException $e) {
         notify('Error', $e->getMessage());
     }
@@ -111,6 +113,8 @@ function notify($title, $message, $icon = null)
     if ($icon) {
         $command .= ' -i ' . escapeshellarg($icon);
     }
+
+    echo 'Command: ' . $command . "\n";
 
     exec($command);
 }
