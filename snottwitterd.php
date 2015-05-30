@@ -73,9 +73,9 @@ while (true) {
                 $icon = $twit['user']['profile_image_url'];
             }
 
-            if ($lastTwitId) {
+            //if ($lastTwitId) {
                 notify($title, $body, get_image_path($icon));
-            }
+            //}
         }
 
         $lastTwitId = $twits[0]['id'];
@@ -105,7 +105,7 @@ function get_image_path($url)
 function notify($title, $message, $icon = null)
 {
     $command = sprintf(
-        'export DISPLAY=:0; notify-send %s %s',
+        'unset DBUS_SESSION_BUS_ADDRESS; notify-send %s %s',
         escapeshellarg($title),
         escapeshellarg($message)
     );
